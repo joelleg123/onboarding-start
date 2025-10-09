@@ -9,13 +9,12 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Placeholder for now
+This project works by ... x, y, z.
 
 ## How to test
 
-Explain how to use your project
-changing again in an attempt to fix workflow
+In order to test the project... do x, y, z.
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+This project uses the following external hardware: x, y, z.
