@@ -19,7 +19,7 @@ reg [15:0] data;
 reg nCS_sync1, nCS_sync2;
 reg transaction_processed, transaction_ready;
 
-always @(posedge clk or negedge rst_n) begin
+always @(posedge SCLK or negedge rst_n) begin
     if (!rst_n) begin
         en_reg_out_7_0    <= 0;
         en_reg_out_15_8   <= 0;
@@ -46,7 +46,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 // Update registers only after the complete transaction has finished and been validated
-always @(posedge clk or negedge rst_n) begin
+always @(posedge SCLK or negedge rst_n) begin
     if (!rst_n) begin
         en_reg_out_7_0    <= 0;
         en_reg_out_15_8   <= 0;
