@@ -19,4 +19,4 @@ To test the SPI module, check address handling, write to a register, assert uo_o
 
 ## External hardware
 
-This project uses the following external hardware: I do not know yet.
+This project uses the following external hardware: This will be updated later.
