@@ -33,7 +33,7 @@ always @(posedge SCLK or negedge rst_n) begin
     end else begin
     
         // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS_posedge) begin
+        if (nCS) begin
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
