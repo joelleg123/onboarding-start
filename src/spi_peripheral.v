@@ -16,7 +16,15 @@ module spi_peripheral (
 reg [3:0] index;
 reg [15:0] data;
 
-reg nCS_sync1, nCS_sync2;
+wire r_w;
+reg [6:0] address;
+reg [7:0] acc_data;
+
+assign r_w      = data[15];
+assign address  = data[14:8];
+assign acc_data = data[7:0];
+
+reg nCS_sync1, nCS_sync2, nCS_p;
 reg transaction_processed, transaction_ready;
 
 always @(posedge SCLK or negedge rst_n) begin
@@ -27,21 +35,28 @@ always @(posedge SCLK or negedge rst_n) begin
         en_reg_pwm_15_8   <= 0;
         pwm_duty_cycle    <= 0;
         transaction_ready <= 1'b0;
-        // omitted code
-    end else if (nCS_sync2 == 1'b0) begin
+        index             <= 4'b0;
+        data              <= 16'b0;
         // omitted code
     end else begin
+        nCS_sync1 <= nCS;
+        nCS_sync2 <= nCS_sync1;
+        nCS_p     <= nCS_sync2;
     
         // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS) begin
+        if (nCS_sync2 && ~nCS_p) begin
             transaction_ready <= 1'b1;
+            index <= 4'b0;
         end else if (transaction_processed) begin
-            // Clear ready flag once processed
             transaction_ready <= 1'b0;
+        end else if (~nCS_sync2) begin
+            data[15 - index] <= COPI;
+            index <= index + 1;
+            if(nCS_p) begin
+                index <= 4'b0;
+            end
+            // omitted code
         end
-
-
-        // omitted code
     end
 end
 
@@ -56,7 +71,19 @@ always @(posedge SCLK or negedge rst_n) begin
         transaction_processed <= 1'b0;
     end else if (transaction_ready && !transaction_processed) begin
         // Transaction is ready and not yet processed
-        // omitted code
+        if (r_w) begin
+            if(address == 7'b0) begin
+                en_reg_out_7_0  <= acc_data;
+            end else if (address == 7'b1) begin
+                en_reg_out_15_8 <= acc_data;
+            end else if (address == 7'b2) begin
+                en_reg_pwm_7_0  <= acc_data;
+            end else if (address == 7'b3) begin
+                en_reg_pwm_15_8 <= acc_data;
+            end else if (address == 7'b4) begin
+                pwm_duty_cycle  <= acc_data;
+            end
+        end
         // Set the processed flag
         transaction_processed <= 1'b1;
     end else if (!transaction_ready && transaction_processed) begin
