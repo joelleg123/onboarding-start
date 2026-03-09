@@ -74,13 +74,13 @@ always @(posedge SCLK or negedge rst_n) begin
         if (r_w) begin
             if(address == 7'b0) begin
                 en_reg_out_7_0  <= acc_data;
-            end else if (address == 7'b1) begin
+            end else if (address == 7'b0000001) begin
                 en_reg_out_15_8 <= acc_data;
-            end else if (address == 7'b2) begin
+            end else if (address == 7'b0000010) begin
                 en_reg_pwm_7_0  <= acc_data;
-            end else if (address == 7'b3) begin
+            end else if (address == 7'b0000011) begin
                 en_reg_pwm_15_8 <= acc_data;
-            end else if (address == 7'b4) begin
+            end else if (address == 7'b0000100) begin
                 pwm_duty_cycle  <= acc_data;
             end
         end
