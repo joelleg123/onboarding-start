@@ -51,7 +51,7 @@ always @(posedge SCLK or negedge rst_n) begin
             index <= 4'b0;
             data <= 16'b0;
         end else if (~nCS_p) begin
-            data[15 - index] <= COPI;
+            data[index] <= COPI;
             index <= index + 1;
         end
     end
