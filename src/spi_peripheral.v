@@ -17,8 +17,8 @@ reg [3:0] index;
 reg [15:0] data;
 
 wire r_w;
-reg [6:0] address;
-reg [7:0] acc_data;
+wire [6:0] address;
+wire [7:0] acc_data;
 
 assign r_w      = data[15];
 assign address  = data[14:8];
@@ -50,10 +50,11 @@ always @(posedge SCLK or negedge rst_n) begin
         end else if (transaction_processed) begin
             transaction_ready <= 1'b0;
         end else if (~nCS_sync2) begin
-            data[15 - index] <= COPI;
-            index <= index + 1;
             if(nCS_p) begin
                 index <= 4'b0;
+            end else begin
+                data[15 - index] <= COPI;
+                index <= index + 1;
             end
             // omitted code
         end
