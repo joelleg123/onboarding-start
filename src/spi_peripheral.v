@@ -29,11 +29,6 @@ reg transaction_processed, transaction_ready;
 
 always @(posedge SCLK or negedge rst_n) begin
     if (!rst_n) begin
-        en_reg_out_7_0    <= 0;
-        en_reg_out_15_8   <= 0;
-        en_reg_pwm_7_0    <= 0;
-        en_reg_pwm_15_8   <= 0;
-        pwm_duty_cycle    <= 0;
         transaction_ready <= 1'b0;
         index             <= 4'b0;
         data              <= 16'b0;
@@ -62,14 +57,24 @@ end
 // Update registers only after the complete transaction has finished and been validated
 always @(posedge SCLK or negedge rst_n) begin
     if (!rst_n) begin
+        transaction_processed <= 1'b0;
+    end else if (transaction_ready && !transaction_processed) begin
+        // Transaction is ready and not yet processed
+        transaction_processed <= 1'b1;
+    end else if (!transaction_ready && transaction_processed) begin
+        // Reset processed flag when ready flag is cleared
+        transaction_processed <= 1'b0;
+    end
+end
+
+always @(posedge SCLK or negedge rst_n) begin
+    if (!rst_n) begin
         en_reg_out_7_0    <= 0;
         en_reg_out_15_8   <= 0;
         en_reg_pwm_7_0    <= 0;
         en_reg_pwm_15_8   <= 0;
         pwm_duty_cycle    <= 0;
-        transaction_processed <= 1'b0;
     end else if (transaction_ready && !transaction_processed) begin
-        // Transaction is ready and not yet processed
         if (r_w) begin
             if(address == 7'b0) begin
                 en_reg_out_7_0  <= acc_data;
@@ -83,11 +88,6 @@ always @(posedge SCLK or negedge rst_n) begin
                 pwm_duty_cycle  <= acc_data;
             end
         end
-        // Set the processed flag
-        transaction_processed <= 1'b1;
-    end else if (!transaction_ready && transaction_processed) begin
-        // Reset processed flag when ready flag is cleared
-        transaction_processed <= 1'b0;
     end
 end
 
