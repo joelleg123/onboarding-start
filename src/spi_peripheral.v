@@ -24,7 +24,10 @@ assign r_w      = data[15];
 assign address  = data[14:8];
 assign acc_data = data[7:0];
 
-reg nCS_sync1, nCS_sync2, nCS_p;
+wire nCS_f = (nCS_pp == 1) && (nCS_p == 0);
+wire nCS_r = (nCS_pp == 0) && (nCS_p == 1);
+
+reg nCS_p, nCS_pp;
 reg transaction_processed, transaction_ready;
 
 always @(posedge SCLK or negedge rst_n) begin
@@ -32,22 +35,22 @@ always @(posedge SCLK or negedge rst_n) begin
         transaction_ready <= 1'b0;
         index             <= 4'b0;
         data              <= 16'b0;
-        // omitted code
+        nCS_p             <= 1'b1;
+        nCS_pp            <= 1'b1;
     end else begin
-        nCS_sync1 <= nCS;
-        nCS_sync2 <= nCS_sync1;
-        nCS_p     <= nCS_sync2;
+        nCS_p  <= nCS;
+        nCS_pp <= nCS_p;
     
         // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS_sync2 && ~nCS_p) begin
+        if (nCS_r) begin
             transaction_ready <= 1'b1;
             index <= 4'b0;
         end else if (transaction_processed) begin
             transaction_ready <= 1'b0;
-        end else if (~nCS_sync2 && nCS_p) begin
+        end else if (nCS_f) begin
             index <= 4'b0;
             data <= 16'b0;
-        end else if (~nCS_sync2) begin
+        end else if (~nCS_p) begin
             data[15 - index] <= COPI;
             index <= index + 1;
         end
