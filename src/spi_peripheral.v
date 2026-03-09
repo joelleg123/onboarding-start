@@ -49,14 +49,12 @@ always @(posedge SCLK or negedge rst_n) begin
             index <= 4'b0;
         end else if (transaction_processed) begin
             transaction_ready <= 1'b0;
+        end else if (~nCS_sync2 && nCS_p) begin
+            index <= 4'b0;
+            data <= 4'b0;
         end else if (~nCS_sync2) begin
-            if(nCS_p) begin
-                index <= 4'b0;
-            end else begin
-                data[15 - index] <= COPI;
-                index <= index + 1;
-            end
-            // omitted code
+            data[15 - index] <= COPI;
+            index <= index + 1;
         end
     end
 end
