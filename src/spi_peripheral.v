@@ -51,7 +51,7 @@ always @(posedge SCLK or negedge rst_n) begin
             transaction_ready <= 1'b0;
         end else if (~nCS_sync2 && nCS_p) begin
             index <= 4'b0;
-            data <= 4'b0;
+            data <= 16'b0;
         end else if (~nCS_sync2) begin
             data[15 - index] <= COPI;
             index <= index + 1;
