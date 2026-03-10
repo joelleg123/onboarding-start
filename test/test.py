@@ -154,13 +154,13 @@ async def test_pwm_freq(dut):
     dut._log.info("Start PWM frequency test")
 
     for i in range(3):
-        await RisingEdge(dut.pwm_duty_cycle)
+        await RisingEdge(dut.uo_out)
 
     t_start = cocotb.utils.get_sim_time('ns')
     cycles = 10
 
     for i in range(cycles):
-        await RisingEdge(dut.pwm_duty_cycle)
+        await RisingEdge(dut.uo_out)
 
     t_end = cocotb.utils.get_sim_time('ns')
 
@@ -184,16 +184,16 @@ async def test_pwm_duty(dut):
 
     await send_spi_transaction(dut, r_w=1, address=0x04, data=duty_value)
 
-    await RisingEdge(dut.pwm_duty_cycle)
-    await FallingEdge(dut.pwm_duty_cycle)
+    await RisingEdge(dut.uo_out)
+    await FallingEdge(dut.uo_out)
 
-    await RisingEdge(dut.pwm_duty_cycle)
+    await RisingEdge(dut.uo_out)
     t_start = cocotb.utils.get_sim_time('ns')
 
-    await FallingEdge(dut.pwm_duty_cycle)
+    await FallingEdge(dut.uo_out)
     t_high = cocotb.utils.get_sim_time('ns')
 
-    await RisingEdge(dut.pwm_duty_cycle)
+    await RisingEdge(dut.uo_out)
     t_end = cocotb.utils.get_sim_time('ns')
 
     high_time = t_high - t_start
