@@ -6,6 +6,7 @@ module spi_peripheral (
     input  wire       COPI,
     input  wire       nCS,
     input  wire       rst_n,
+    input  wire       clk,
     output  reg [7:0] en_reg_out_7_0,
     output  reg [7:0] en_reg_out_15_8,
     output  reg [7:0] en_reg_pwm_7_0,
@@ -13,33 +14,44 @@ module spi_peripheral (
     output  reg [7:0] pwm_duty_cycle
 );
 
+
+reg [1:0] sclk_sy, nCS_sy, copi_sy;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        sclk_sy <= 2'b00;
+        nCS_sy  <= 2'b11; 
+        copi_sy <= 2'b00;
+    end else begin
+        sclk_sy <= {sclk_sy[0], SCLK};
+        nCS_sy  <= { nCS_sy[0],  nCS};
+        copi_sy <= {copi_sy[0], COPI};
+    end
+end
+
+wire sclk_s = sclk_sy[1];
+wire nCS_s  = nCS_sy[1];
+wire copi_s = copi_sy[1];
+
+wire sclk_r = (sclk_sy == 2'b01);
+wire nCS_r  = (nCS_sy  == 2'b01);
+wire nCS_f  = (nCS_sy  == 2'b10);
+
 reg [3:0] index;
 reg [15:0] data;
 
-wire r_w;
-wire [6:0] address;
-wire [7:0] acc_data;
+wire r_w = data[0];
+wire [6:0] address = data[7:1];
+wire [7:0] acc_data = data[15:8];
 
-assign r_w      = data[15];
-assign address  = data[14:8];
-assign acc_data = data[7:0];
-
-wire nCS_f = (nCS_pp == 1) && (nCS_p == 0);
-wire nCS_r = (nCS_pp == 0) && (nCS_p == 1);
-
-reg nCS_p, nCS_pp;
 reg transaction_processed, transaction_ready;
 
-always @(posedge SCLK or negedge rst_n) begin
+always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         transaction_ready <= 1'b0;
         index             <= 4'b0;
         data              <= 16'b0;
-        nCS_p             <= 1'b1;
-        nCS_pp            <= 1'b1;
     end else begin
-        nCS_p  <= nCS;
-        nCS_pp <= nCS_p;
     
         // When nCS goes high (transaction ends), validate the complete transaction
         if (nCS_r) begin
@@ -47,50 +59,42 @@ always @(posedge SCLK or negedge rst_n) begin
             index <= 4'b0;
         end else if (transaction_processed) begin
             transaction_ready <= 1'b0;
-        end else if (nCS_f) begin
+        end
+        
+        if (nCS_f) begin
             index <= 4'b0;
             data <= 16'b0;
-        end else if (~nCS_p) begin
-            data[index] <= COPI;
+        end else if (~nCS_s && sclk_r) begin
+            data[index] <= copi_s;
             index <= index + 1;
         end
     end
 end
 
 // Update registers only after the complete transaction has finished and been validated
-always @(posedge SCLK or negedge rst_n) begin
+always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         transaction_processed <= 1'b0;
-    end else if (transaction_ready && !transaction_processed) begin
-        // Transaction is ready and not yet processed
-        transaction_processed <= 1'b1;
-    end else if (!transaction_ready && transaction_processed) begin
-        // Reset processed flag when ready flag is cleared
-        transaction_processed <= 1'b0;
-    end
-end
-
-always @(posedge SCLK or negedge rst_n) begin
-    if (!rst_n) begin
         en_reg_out_7_0    <= 0;
         en_reg_out_15_8   <= 0;
         en_reg_pwm_7_0    <= 0;
         en_reg_pwm_15_8   <= 0;
         pwm_duty_cycle    <= 0;
     end else if (transaction_ready && !transaction_processed) begin
+        // Transaction is ready and not yet processed
+        transaction_processed <= 1'b1;
         if (r_w) begin
-            if(address == 7'b0) begin
-                en_reg_out_7_0  <= acc_data;
-            end else if (address == 7'b0000001) begin
-                en_reg_out_15_8 <= acc_data;
-            end else if (address == 7'b0000010) begin
-                en_reg_pwm_7_0  <= acc_data;
-            end else if (address == 7'b0000011) begin
-                en_reg_pwm_15_8 <= acc_data;
-            end else if (address == 7'b0000100) begin
-                pwm_duty_cycle  <= acc_data;
-            end
+            case (address)
+                7'b0000000: en_reg_out_7_0  <= acc_data;
+                7'b0000001: en_reg_out_15_8 <= acc_data;
+                7'b0000010: en_reg_pwm_7_0  <= acc_data;
+                7'b0000011: en_reg_pwm_15_8 <= acc_data;
+                7'b0000100: pwm_duty_cycle  <= acc_data;
+            endcase
         end
+    end else if (!transaction_ready && transaction_processed) begin
+        // Reset processed flag when ready flag is cleared
+        transaction_processed <= 1'b0;
     end
 end
 
