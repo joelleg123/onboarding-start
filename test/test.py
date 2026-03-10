@@ -3,7 +3,7 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import RisingEdge, FallingEdge
 from cocotb.triggers import ClockCycles
 from cocotb.types import Logic
 from cocotb.types import LogicArray
@@ -151,11 +151,60 @@ async def test_spi(dut):
 
 @cocotb.test()
 async def test_pwm_freq(dut):
+    dut._log.info("Start PWM frequency test")
+
+    for i in range(3):
+        await RisingEdge(dut.pwm_out)
+
+    t_start = cocotb.utils.get_sim_time('ns')
+    cycles = 10
+
+    for i in range(cycles):
+        await RisingEdge(dut.pwm_out)
+
+    t_end = cocotb.utils.get_sim_time('ns')
+
+    avg_period_ns = (t_end - t_start) / cycles
+    freq_khz = 1e6 / avg_period_ns  
+
+    dut._log.info(f"Measured PWM frequency: {freq_khz:.3f} kHz")
+
+    assert 2.97 <= freq_khz <= 3.03, \
+        f"PWM frequency out of range: {freq_khz:.3f} kHz"
     # Write your test here
     dut._log.info("PWM Frequency test completed successfully")
 
 
 @cocotb.test()
 async def test_pwm_duty(dut):
+    dut._log.info("Start PWM duty test")
+
+    duty_value = 0x80 
+    expected = duty_value / 255
+
+    await cocotb.utils.send_spi_transaction(dut, r_w = 1, address=0x04, data=duty_value)
+
+    await RisingEdge(dut.pwm_out)
+    await FallingEdge(dut.pwm_out)
+
+    await RisingEdge(dut.pwm_out)
+    t_start = cocotb.utils.get_sim_time('ns')
+
+    await FallingEdge(dut.pwm_out)
+    t_high = cocotb.utils.get_sim_time('ns')
+
+    await RisingEdge(dut.pwm_out)
+    t_end = cocotb.utils.get_sim_time('ns')
+
+    high_time = t_high - t_start
+    period = t_end - t_start
+    duty = high_time / period
+
+    dut._log.info(f"Measured duty: {duty:.3f}, expected: {expected:.3f}")
+
+    assert abs(duty - expected) < 0.01, \
+        f"Duty cycle mismatch: {duty:.3f} vs {expected:.3f}"
+
     # Write your test here
     dut._log.info("PWM Duty Cycle test completed successfully")
+
