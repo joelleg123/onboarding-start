@@ -40,9 +40,9 @@ wire nCS_f  = (nCS_sy  == 2'b10);
 reg [3:0] index;
 reg [15:0] data;
 
-wire r_w = data[0];
-wire [6:0] address = data[7:1];
-wire [7:0] acc_data = data[15:8];
+wire r_w = data[15];
+wire [6:0] address = data[14:8];
+wire [7:0] acc_data = data[7:0];
 
 reg transaction_processed, transaction_ready;
 
@@ -65,7 +65,7 @@ always @(posedge clk or negedge rst_n) begin
             index <= 4'b0;
             data <= 16'b0;
         end else if (~nCS_s && sclk_r) begin
-            data[index] <= copi_s;
+            data[15 - index] <= copi_s;
             index <= index + 1;
         end
     end
