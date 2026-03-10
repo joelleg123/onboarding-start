@@ -106,7 +106,7 @@ async def test_spi(dut):
     dut._log.info("Test project behavior")
     dut._log.info("Write transaction, address 0x00, data 0xF0")
     ui_in_val = await send_spi_transaction(dut, 1, 0x00, 0xF0)  # Write transaction
-    assert dut.uo_out.value == 0xF0, f"Expected 0xF0, got {dut.uo_out.value}"
+    assert dut.uo_out[0].value == 0xF0, f"Expected 0xF0, got {dut.uo_out[0].value}"
     await ClockCycles(dut.clk, 1000) 
 
     dut._log.info("Write transaction, address 0x01, data 0xCC")
@@ -120,7 +120,7 @@ async def test_spi(dut):
 
     dut._log.info("Read transaction (invalid), address 0x00, data 0xBE")
     ui_in_val = await send_spi_transaction(dut, 0, 0x30, 0xBE)
-    assert dut.uo_out.value == 0xF0, f"Expected 0xF0, got {dut.uo_out.value}"
+    assert dut.uo_out[0].value == 0xF0, f"Expected 0xF0, got {dut.uo_out[0].value}"
     await ClockCycles(dut.clk, 100)
     
     dut._log.info("Read transaction (invalid), address 0x41 (invalid), data 0xEF")
@@ -154,13 +154,13 @@ async def test_pwm_freq(dut):
     dut._log.info("Start PWM frequency test")
 
     for i in range(3):
-        await RisingEdge(dut.uo_out)
+        await RisingEdge(dut.uo_out[0])
 
     t_start = cocotb.utils.get_sim_time('ns')
     cycles = 10
 
     for i in range(cycles):
-        await RisingEdge(dut.uo_out)
+        await RisingEdge(dut.uo_out[0])
 
     t_end = cocotb.utils.get_sim_time('ns')
 
@@ -184,16 +184,16 @@ async def test_pwm_duty(dut):
 
     await send_spi_transaction(dut, r_w=1, address=0x04, data=duty_value)
 
-    await RisingEdge(dut.uo_out)
-    await FallingEdge(dut.uo_out)
+    await RisingEdge(dut.uo_out[0])
+    await FallingEdge(dut.uo_out[0])
 
-    await RisingEdge(dut.uo_out)
+    await RisingEdge(dut.uo_out[0])
     t_start = cocotb.utils.get_sim_time('ns')
 
-    await FallingEdge(dut.uo_out)
+    await FallingEdge(dut.uo_out[0])
     t_high = cocotb.utils.get_sim_time('ns')
 
-    await RisingEdge(dut.uo_out)
+    await RisingEdge(dut.uo_out[0])
     t_end = cocotb.utils.get_sim_time('ns')
 
     high_time = t_high - t_start
